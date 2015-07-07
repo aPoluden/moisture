@@ -1,0 +1,25 @@
+Arduino notes
+
+<Installation IDE>
+
+sudo apt-get install gcc-avr avr-libc openjdk-6-jre
+wget http://arduino.googlecode.com/files/arduino-1.0-linux64.tgz
+tar -xzvf arduino-1.0-linux64.tgz
+cd arduino-1.0
+./arduino
+
+<Configuration IDE>
+1. Select correct board
+2. Select appopriate port
+   $dmesg | tail (shows devices)
+
+
+
+
+
+<Problems>
+1. Can't upload scetch to Board o ubuntu
+    - eavrdude: ser_open(): can't open device "/dev/ttyACM0": Permission deniedioctl("TIOCMGET"): Inappropriate ioctl for device
+    SOLUTION:  
+    $ sudo chmod a+rw /dev/ttyACM0
+    $ sudo usermod -a -G dialout <username>
