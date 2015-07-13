@@ -1,10 +1,10 @@
-import os, time, datetime
+import os, time, datetime, db
 from application import app
 
 @app.route('/data/<int:value>',  methods = ['POST', 'GET'])
 def receiveData(value):
     ts = getTimeStamp()
-    return "Hello World" + str(value)
+    return db.dbStatus()
 
 def getTimeStamp():
 	ts = time.time()
