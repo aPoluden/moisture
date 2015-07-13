@@ -4,6 +4,7 @@ from application import app
 @app.route('/data/<int:value>',  methods = ['POST', 'GET'])
 def receiveData(value):
     ts = getTimeStamp()
+    db.insertValues(ts, value)
     return db.dbStatus()
 
 def getTimeStamp():
