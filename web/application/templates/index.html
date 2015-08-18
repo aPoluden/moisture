@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html ng-app="moistureApp">
+	<head>
+	    <meta content="text/html; charset=utf-8">
+		<title>Moisture</title>	
+		<script type="text/javascript" src="../static/lib/angular.min.js"></script>
+		<script type="text/javascript" src="../static/js/app.js"></script>
+	</head>
+	<body>
+		<h1>Controlls</h1>
+		<div ng-controller='pumpController'>
+			<button ng-click='turnOn()'>On</button>	
+			<button ng-click='turnOff()'>Off</button>
+  			<button ng-click='status()'>Status</button>
+		</div>
+	</body>
+</html>
