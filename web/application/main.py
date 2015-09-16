@@ -1,12 +1,13 @@
 import os, time, datetime, db
 from application import app
-from model import pump
+from model import pump, condition
 
 @app.route('/data/<int:value>',  methods = ['POST', 'GET'])
 def receiveData(value):
     ts = getTimeStamp()
     db.insertValues(ts, value)
     return db.dbStatus()
+    return "Data received"
 
 def getTimeStamp():
 	ts = time.time()
@@ -17,18 +18,18 @@ def turnOn():
 	if pump.working is False:
 		# Pump turn on logic
 	    pump.working = True
-	    return "Pump turned on"
+	    return condition.ON
 	else:
-		return "Check pump status"
+		return condition.CHECK
 
 @app.route('/pump/off',  methods = ['PUT', 'GET'])
 def turnOff():
 	if pump.working is True:
 		# Pump turn off logic
 		pump.working = False
-		return "Pump turned off"
+		return condition.OFF
 	else:
-		return "Check pump status"
+		return condition.CHECK
 
 @app.route('/pump/status', methods = ['GET'])
 def status():
