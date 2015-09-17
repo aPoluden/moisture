@@ -1,16 +1,23 @@
 angular.module('moisture.ctrls', ['moisture.services'])
 
 .controller('PumpCtrl', ['$scope', 'arduino', function($scope, arduino) {
+	$scope.logs = [];
+	$scope.timeStamps = [];
 	$scope.turnOn = function() {
-		arduino.turnOn();
+		arduino.turnOn().then(function(data) {
+			$scope.logs.push({timeStamp : arduino.getTimeStamp(), data : data.data})
+		});
 	};
 
 	$scope.turnOff = function() {
-		arduino.turnOff();
+		arduino.turnOff().then(function(data) {
+			$scope.logs.push({timeStamp : arduino.getTimeStamp(), data : data.data});
+		});
 	};
     
     $scope.getStatus = function() {
-    	var stat = arduino.getStatus();
-    	console.log(stat);
+    	arduino.getStatus().then(function(data) {
+    		$scope.logs.push({timeStamp : arduino.getTimeStamp(), data : data.data})
+    	});
     };
 }])
