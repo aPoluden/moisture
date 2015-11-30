@@ -42,4 +42,19 @@ angular.module('moisture.services', [])
 	  		return date.join("/") + " " + time.join(":") + " " + suffix;
 		}
     };
+}])
+.factory('auth', ['$http','$q', 'socket', function($http, $q, socket) {
+	return {
+		userExists: function(user) {
+			var deferred = $q.defer();
+			var data = angular.toJson(user, false);
+			return $http.post(socket + "/check", data).then(function(response) {
+				// check if user exists
+				deferred.resolve("Ok");
+			}, function(error) {
+				deffered.reject("Not ok");
+			});
+			return deferred.promise;
+		}		
+	}
 }]);

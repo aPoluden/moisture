@@ -1,3 +1,6 @@
+{% extends "index.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
 <div id="top-nav" class="navbar navbar-inverse navbar-static-top">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -46,12 +49,13 @@
 			        	Logs
 			        </div>
 			        	<div class="panel-body" style="height: 300px; overflow-y: scroll; background:#303030;">
-			        		<ul>
+			        		{#<ul>
 			        			<li ng-repeat="log in logs  track by $index" style="padding:5px;"><font style="color:white;"> >> {{log.timeStamp}} : {{log.data}}</font></li>
-			        		</ul>
+			        		</ul>#}
 			        	</div>
 			    </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}

@@ -21,6 +21,3 @@ angular.module('moisture.ctrls', ['moisture.services'])
     	});
     };
 }])
-.controller('LoginCtrl', ['$scope', function($scope) {
-
-}])
