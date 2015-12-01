@@ -20,13 +20,13 @@ def login_required(f):
 @app.route('/')
 @login_required
 def index():
-    return render_template('dashboard.html')	
+    return render_template('dashboard.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
-    	# TO - DO check credentials with database
+        # TO - DO check credentials with database
         if request.form['username'] != 'admin' or request.form['password'] != 'admin':
             error = 'Invalid Credentials. Please try again.'
         else:

@@ -1,10 +1,6 @@
 from flask.ext.sqlalchemy import SQLAlchemy
 from werkzeug import generate_password_hash, check_password_hash
-
-def enum(**enums):
-	return type('Enum', (), enums)
-
-condition = enum(ON='Pump turned on', OFF='Pump turned off', CHECK='Check Pump status')
+from func import condition
 
 #Database
 db = SQLAlchemy()
