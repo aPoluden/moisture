@@ -3,7 +3,7 @@ from model import db
 from flask.ext.cors import CORS
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://artiom:password@193.219.42.49:3036/moisture'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://artiom:password@localhost:3036/village'
 db.init_app(app)
 cors = CORS(app)
 

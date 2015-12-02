@@ -20,13 +20,13 @@ pump = Pump()
 
 #User
 class User(db.Model):
-	__tablename__ = 'users'
+	__tablename__ = 'Users'
 	uid = db.Column(db.Integer, primary_key = True)
 	firstname = db.Column(db.String(100))
 	lastname = db.Column(db.String(100))
 	email = db.Column(db.String(100), unique=True)
 	pwdhash = db.Column(db.String(100))
-	admin = db.Column(db.Integer)
+	# admin = db.Column(db.Integer)
 	
 	def __init__(self, firstname, lastname, email, password, admin):
 	    self.firstname = firstname.title()
