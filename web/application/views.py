@@ -12,7 +12,7 @@ def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         if 'logged_in' in session:
-            return f(*args, **kwargs)
+            return f() # redirects to index method
         else:
             flash('You need to login first.')
             return redirect(url_for('login'))
@@ -27,7 +27,6 @@ def index():
 def login():
     error = None
     if request.method == 'POST':
-        # TO - DO check credentials with database
         userPwd = request.form['password']
         user = User.query.filter_by(email = request.form['username']).first()
         if not user:
@@ -35,10 +34,12 @@ def login():
         else:
             if user.check_password(userPwd):
                 session['logged_in'] = True
+                session['user'] = user.firstname
+                user = session['user']
                 flash('You were logged in.')
                 return redirect(url_for('index'))
             else:
-                render_template('login.html', error=error)
+                error = 'Invalid Credentials. Please try again.'
     return render_template('login.html', error=error)
 
 @app.route('/logout')
