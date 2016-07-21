@@ -1,113 +1,135 @@
 #include <SoftwareSerial.h>
 
-// Serial
-String REQUEST = "";
-// SIM900 to Arduino
-String RESPONSE = "";
-
 struct SMS {
    char  sender_number[12];
    char  ts[20];
    char  msg[160];
 };
 
-boolean stringComplete = false;
 String MY_NUMBER = "+37067309726;";
-
 SoftwareSerial SIM900(7, 8);
 
-// Program setup
 void setup() {
   //powerUp();
   Serial.begin(57600);
   SIM900.begin(19200);
-  REQUEST.reserve(200); // ??
   SIM900.print("AT+CNMI=2,2,0,0,0\r");
 }
 
-// Main program
+// Main loop
 void loop() {
-   while (SIM900.available()) {
-      char msg_byte = SIM900.read();
-      RESPONSE += msg_byte;
-   }
-   delay(1000);
-   if (RESPONSE.length() != 0) {      
-//    Process RESPONSE FROM SIM900
-      parseSim900Response();
-      RESPONSE = "";
-   }
-// print the string when a newline arrives:
-  if (stringComplete) {
-    // SEND msg to SIM900
-    SIM900.println(REQUEST);
-    SIM900.flush();
-    // clear the string:
-    REQUEST = "";
-    Serial.flush();
-    stringComplete = false;
-  }
+    String sim_output = check_sim900_output();
+    if (sim_output.length() != 0) {
+        if (check_if_sms(sim_output)) {
+            parse_sms(sim_output);
+            // TODO 
+            // Get object{number, msg}
+            // Check number
+            // Check SMS content
+            // Clear message memory
+        } else {
+          // Some serios info from sim900
+          // TODO send data to my number
+        }
+    }
+    String serial_input = check_serial();
+    if (serial_input != "") {
+      send_command_to_sim900(serial_input);
+    }
 }
 
-void parseSim900Response() {
-  String sms_head = "+CMT";
-  char buf [256];
-  int phone_index_start = 9;
-  int phone_index_finish = 21;
-  int sms_index_start = 48;
-  String phone = "";
-  String sms = "";
-
-  if (RESPONSE.indexOf(sms_head) > -1) {
-    phone = RESPONSE.substring(phone_index_start, phone_index_finish);
-    sms = RESPONSE.substring(sms_index_start);
-    Serial.println(phone);
-    Serial.println(sms);
-  } else {
-    // TODO send SIM900 output to dedicated number
-    Serial.println("Not SMS");
-  }
+// Sends commands to sim900 module
+void send_command_to_sim900(String cmd) {
+    SIM900.print(cmd);
 }
 
-// SEND SMS NOT TESTED
-void sendSMS(String msg) {
-  SIM900.println("AT + CMGS = \"+12128675309\"");                                     // recipient's mobile number, in international format
-  delay(100);
-  SIM900.println("Hello, world. This is a text message from an Arduino Uno.");        // message to send
-  delay(100);
-  SIM900.println((char)26);                       // End AT command with a ^Z, ASCII code 26
-  delay(100); 
-  SIM900.println();
-  delay(5000);                                     // give module time to send SMS
-}
-
-// Software reset for GPRS shield NOT WORKING
-void powerUp() {
-  pinMode(6, OUTPUT);
-  digitalWrite(6,LOW);
-  delay(1000);
-  digitalWrite(6,HIGH);
-  delay(2000);
-  digitalWrite(6,LOW);
-  delay(3000);
-}
-
-// Handle Serial RX from PC
-void serialEvent() {
-  while (Serial.available()) {
-    // get the new byte:
-    char inChar = (char) Serial.read();
-    if (inChar == '\r') {
-      stringComplete = true;
+// Check if serial available
+String check_serial() {
+  String serial_request = "";
+  // Check if available bytes on serial
+  while (Serial.available())  {
+    // get byte from serial:
+    char inChar = Serial.read();
+    if (inChar == '\n') {
+      return serial_request;
     } else {
-      REQUEST += inChar;
+      serial_request += inChar;
     }
   }
+  return serial_request;
 }
+
+// Check if SIM900 has something
+String check_sim900_output() {
+   String sim_output = "";
+   while (SIM900.available()) {
+      sim_output += (char)SIM900.read();
+   }
+   if (sim_output != "") {
+      Serial.print(sim_output);    
+   }
+   return sim_output;
+}
+
+// Check if sim900 is SMS message
+boolean check_if_sms(String sim_output) {
+  String sms_head = "+CMT";
+  if (sim_output.indexOf(sms_head) > -1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Parses Sim900 SMS
+void parse_sms(String sms) {
+    String phone = "";
+    String msg = "";
+    int phone_index_start = 9;
+    int phone_index_finish = 21;
+    int sms_index_start = 48;
+    phone = sms.substring(phone_index_start, phone_index_finish);
+    msg = sms.substring(sms_index_start);
+    Serial.println(phone);
+    Serial.println(msg);
+    
+}
+
+// TODO test
+void sendSMS(String msg, String number) {
+  SIM900.println("AT + CMGS = \"+12128675309\"");
+  delay(100);
+  SIM900.println("Hello, world. This is a text message from an Arduino Uno.");
+  delay(100);
+  SIM900.println((char)26);// End AT command with a ^Z, ASCII code 26
+  delay(100); 
+  SIM900.println();
+  delay(5000);// give module time to send SMS
+}
+
+// Event handler on Serial(RX)
+//void serialEvent() {
+//  String serial_request = "";
+//  // Check if available bytes on serial
+//  while (Serial.available())  {
+//    // get byte from serial:
+//    char inChar = (char) Serial.read();
+//    if (inChar == '\r') {
+//      // Send command to SIM900 module
+//      send_command_to_sim900(serial_request);
+//    } else {
+//      serial_request += inChar;
+//      // RESPONSE += inChar;
+//    }
+//  }
+//}
 
 // ATD + MY_NUMBER call command
 // AT+CMGF - SMS format
 // AT+CMGS="867309726" MSG_BODY + CTRL+Z - to send msg
 // AT+CMGD=1,4 - delete all messages
 
-// Text msg format
+// Tasks
+
+// Code refactoring 
+// Turn on/off pin
