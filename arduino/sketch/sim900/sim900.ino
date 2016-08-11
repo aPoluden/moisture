@@ -1,40 +1,71 @@
+#include <Regexp.h>
 #include <SoftwareSerial.h>
-// SMS structure
+/*
+ * created by A.Poluden
+ * artiomnkkm@gmail.com
+ */
 
+/* 
+ * Cmd enum hold all availble commands
+ * All commands is integers
+ * SMS command example: SMS text(n m) where n is command m is pin number
+ * 
+ * UP - specify digital pin level to high
+ * DOWN - specify digital pin level to low
+ * STATUS - sends via SMS arduino pin status(UP, DOWN)
+ */
 enum Cmd {
-  STOP,
-  START
+  DOWN, UP, STATUS
 };
 
+/*
+ * Pins enum hold all available pins to control
+ */
+enum Pins {
+  ZERO, ONE, TWO, THREE, FOUR, FIVE
+};
+
+// SMS struct
 struct SMS {
    String phone_number;
    String msg;
 };
 
-String PHONE_NUMBERS[] = {"+37067309726"};
-SoftwareSerial SIM900(7, 8);
+// SMS command structure
+struct CMD {
+  byte cmd;
+  byte pin;
+};
 
+// phone numbers which have permissions to control arduino PINS
+String PHONE_NUMBERS[] = {"+37067309726"};
+
+// Arduino pins which could be controlled via SMS
+int PINS[] = {};
+
+// Software serial port wich is used to connect arduino uno and SIM900 module
+SoftwareSerial SIM900(7, 8);
 
 void setup() {
   //powerUp();
   Serial.begin(57600);
   SIM900.begin(19200);
+  // Turn on message receiving
   SIM900.print("AT+CNMI=2,2,0,0,0\r");
-
-  pinMode(2, OUTPUT);
+  // Init pins
+  for (int i = ZERO; i <= FIVE; i++) {
+      pinMode(i, OUTPUT);
+  }
 }
 
-// Main loop
 void loop() {
     String sim_output = check_sim900_output();
     if (sim_output.length() != 0) {
         if (check_if_sms(sim_output)) {
             struct SMS sms = parse_sms(sim_output);
-            // TODO
             if (validate_phone(sms.phone_number)) {
-              process_commands(sms.msg.toInt());
+              process_commands(sms.msg);
             }
-            // Check SMS content
             // Clear message memory
         } else {
           // Some serious info from sim900
@@ -47,23 +78,80 @@ void loop() {
     }
 }
 
-// Sends commands to sim900 module
+// Sends commands to SIM900 module
 void send_command_to_sim900(String cmd) {
     SIM900.print(cmd);
 }
-// 
-void process_commands(int cmd) {
-  switch(cmd) {
-    case START:
-      digitalWrite(2, HIGH);
-      break;
-    case STOP:
-      digitalWrite(2, LOW);
-      break;
-    default:
-      Serial.println("Default");
-      break;
+
+void process_commands(String cmd) {
+  struct CMD command = cmd_parse(cmd);
+  // Magic number 266
+  if (command.cmd != 266) {
+    switch(command.cmd) {
+      case UP:
+        digitalWrite(command.pin, HIGH);
+        Serial.println("UP");
+        // TODO verify sms about pin level change
+        break;
+      case DOWN:
+        Serial.println("DOWN");
+        digitalWrite(command.pin, LOW);
+        // TODO verify sms about pin level change
+        break;
+      case STATUS:
+        // TODO return ALL pin stats
+        break;
+      default:
+        Serial.println("Default");
+        break;
+    }
   }
+}
+
+// Parse SMS text to CMD struct
+CMD cmd_parse(String cmd) {
+  struct CMD commands;
+  // Regex part
+  char charBuf[cmd.length()];
+  cmd.toCharArray(charBuf, cmd.length());
+  MatchState ms;
+  ms.Target(charBuf);
+  char result = ms.Match("(%d)(%s)(%d)");
+  
+  if (result == REGEXP_MATCHED) {
+    byte index = cmd.indexOf(" ");
+    byte pin = cmd.substring(index, cmd.length()).toInt();
+    byte command = cmd.substring(0, index).toInt();
+    if (cmd_valid(command) && pin_valid(pin)) {
+       commands.cmd = command;
+       commands.pin = pin;
+       Serial.println("Cmd and pins valid");
+       return commands;
+    } else {
+      Serial.println("Cmd and pins not valid");
+    }
+  } else if (result == REGEXP_NOMATCH) {
+    // TODO
+  }
+  else {
+    // TODO some sort of error
+  }
+}
+
+// Validate command parameter
+boolean cmd_valid(int cmd) {
+  for (int i = DOWN; i <= STATUS; i++) {
+    if (i == cmd) return true;
+  }
+  return false;
+}
+
+// Validate pin parameter
+boolean pin_valid(int pin) {
+  for (int i = ZERO; i <= FIVE; i++) {
+    if (i == pin) return true;
+  }
+  return false;
 }
 
 // Validate senders phone number
@@ -92,7 +180,7 @@ String check_serial() {
   return serial_request;
 }
 
-// Check if SIM900 has something
+// Check if SIM900 has bytes
 String check_sim900_output() {
    String sim_output = "";
    while (SIM900.available()) {
@@ -104,7 +192,7 @@ String check_sim900_output() {
    return sim_output;
 }
 
-// Check if sim900 is SMS message
+// Check if SIM900 output is SMS message
 boolean check_if_sms(String sim_output) {
   String sms_head = "+CMT";
   if (sim_output.indexOf(sms_head) > -1) {
@@ -114,7 +202,7 @@ boolean check_if_sms(String sim_output) {
   }
 }
 
-// Parses Sim900 SMS
+// SMS parser
 SMS parse_sms(String sms) {
     String phone = "";
     String msg = "";
@@ -125,7 +213,6 @@ SMS parse_sms(String sms) {
     
     phone = sms.substring(phone_index_start, phone_index_finish);
     msg = sms.substring(sms_index_start);
-
     // Define and create struct obj
     struct SMS smsstrct;
     smsstrct.phone_number = phone;
