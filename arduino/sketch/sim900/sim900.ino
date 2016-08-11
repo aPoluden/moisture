@@ -1,19 +1,27 @@
 #include <SoftwareSerial.h>
+// SMS structure
 
-struct SMS {
-   char  sender_number[12];
-   char  ts[20];
-   char  msg[160];
+enum Cmd {
+  STOP,
+  START
 };
 
-String MY_NUMBER = "+37067309726;";
+struct SMS {
+   String phone_number;
+   String msg;
+};
+
+String PHONE_NUMBERS[] = {"+37067309726"};
 SoftwareSerial SIM900(7, 8);
+
 
 void setup() {
   //powerUp();
   Serial.begin(57600);
   SIM900.begin(19200);
   SIM900.print("AT+CNMI=2,2,0,0,0\r");
+
+  pinMode(2, OUTPUT);
 }
 
 // Main loop
@@ -21,14 +29,15 @@ void loop() {
     String sim_output = check_sim900_output();
     if (sim_output.length() != 0) {
         if (check_if_sms(sim_output)) {
-            parse_sms(sim_output);
-            // TODO 
-            // Get object{number, msg}
-            // Check number
+            struct SMS sms = parse_sms(sim_output);
+            // TODO
+            if (validate_phone(sms.phone_number)) {
+              process_commands(sms.msg.toInt());
+            }
             // Check SMS content
             // Clear message memory
         } else {
-          // Some serios info from sim900
+          // Some serious info from sim900
           // TODO send data to my number
         }
     }
@@ -41,6 +50,30 @@ void loop() {
 // Sends commands to sim900 module
 void send_command_to_sim900(String cmd) {
     SIM900.print(cmd);
+}
+// 
+void process_commands(int cmd) {
+  switch(cmd) {
+    case START:
+      digitalWrite(2, HIGH);
+      break;
+    case STOP:
+      digitalWrite(2, LOW);
+      break;
+    default:
+      Serial.println("Default");
+      break;
+  }
+}
+
+// Validate senders phone number
+boolean validate_phone(String phone) {
+  for (int i = 0; i <= sizeof(PHONE_NUMBERS); i++) {
+    if (phone.equals(PHONE_NUMBERS[i])) {
+        return true;
+    }
+  }
+  return false;
 }
 
 // Check if serial available
@@ -82,16 +115,26 @@ boolean check_if_sms(String sim_output) {
 }
 
 // Parses Sim900 SMS
-void parse_sms(String sms) {
+SMS parse_sms(String sms) {
     String phone = "";
     String msg = "";
+    
     int phone_index_start = 9;
     int phone_index_finish = 21;
     int sms_index_start = 48;
+    
     phone = sms.substring(phone_index_start, phone_index_finish);
     msg = sms.substring(sms_index_start);
-    Serial.println(phone);
-    Serial.println(msg);
+
+    // Define and create struct obj
+    struct SMS smsstrct;
+    smsstrct.phone_number = phone;
+    smsstrct.msg = msg;
+    
+    // Serial.println(phone);
+    // Serial.println(msg);
+
+    return smsstrct;
     
 }
 
@@ -130,6 +173,3 @@ void sendSMS(String msg, String number) {
 // AT+CMGD=1,4 - delete all messages
 
 // Tasks
-
-// Code refactoring 
-// Turn on/off pin
